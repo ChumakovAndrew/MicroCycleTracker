@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Habit, Entry, Settings } from '@/types';
 import { db } from '@/db';
 import { nanoid } from './utils';
+import { formatISO, startOfDay } from 'date-fns';
 
 interface HabitStore {
   // State
@@ -31,12 +32,34 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       await db.initialize();
       const habits = await db.habits.toArray();
       const entries = await db.entries.toArray();
-      const settings = await db.settings.toArray();
+      let settings = await db.settings.toArray();
+      
+      // Initialize settings with defaults if not exists
+      if (settings.length === 0) {
+        const today = formatISO(startOfDay(new Date()), { representation: 'date' });
+        const defaultSettings: Settings = {
+          id: 'default',
+          cycleLength: 3,
+          cycleStartDate: today,
+          cycleNumber: 1,
+        };
+        await db.settings.add(defaultSettings as any);
+        settings = [defaultSettings];
+      }
+      
+      const loadedSettings = settings[0] as Settings;
+      
+      // Ensure cycleStartDate exists (for backwards compatibility)
+      if (!loadedSettings.cycleStartDate) {
+        const today = formatISO(startOfDay(new Date()), { representation: 'date' });
+        loadedSettings.cycleStartDate = today;
+        await db.settings.update('default', { cycleStartDate: today } as any);
+      }
       
       set({
         habits: habits as Habit[],
         entries: entries as Entry[],
-        settings: (settings[0] as Settings) || { cycleLength: 3 },
+        settings: loadedSettings,
       });
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -89,7 +112,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
         }
       } else if (value) {
         const entry: Entry = {
-          id: nanoid(),
+          id: crypto.randomUUID(),
           habitId,
           date,
           value,
@@ -107,12 +130,31 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   updateCycleLength: async (length: 3 | 5 | 7) => {
     try {
       const settings = await db.settings.toArray();
+      const currentSettings = settings[0] as Settings || {
+        id: 'default',
+        cycleLength: 3,
+        cycleStartDate: formatISO(startOfDay(new Date()), { representation: 'date' }),
+        cycleNumber: 1,
+      };
+      
       if (settings.length > 0) {
-        await db.settings.update(settings[0] as any, { cycleLength: length });
+        await db.settings.update('default', { 
+          cycleLength: length,
+          cycleStartDate: currentSettings.cycleStartDate,
+          cycleNumber: currentSettings.cycleNumber,
+        } as any);
       } else {
-        await db.settings.add({ cycleLength: length } as any);
+        const newSettings: Settings = {
+          id: 'default',
+          cycleLength: length,
+          cycleStartDate: currentSettings.cycleStartDate,
+          cycleNumber: currentSettings.cycleNumber,
+        };
+        await db.settings.add(newSettings as any);
       }
-      set({ settings: { cycleLength: length } });
+      
+      const updatedSettings = (await db.settings.toArray())[0] as Settings;
+      set({ settings: updatedSettings });
     } catch (error) {
       console.error('Failed to update cycle length:', error);
     }

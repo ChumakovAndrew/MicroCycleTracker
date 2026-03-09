@@ -1,20 +1,81 @@
 import { Entry } from '@/types';
-import { formatISO, startOfDay, subDays, parseISO } from 'date-fns';
+import { formatISO, startOfDay, subDays, parseISO, differenceInDays, addDays } from 'date-fns';
 
 export function getTodayString(): string {
   return formatISO(startOfDay(new Date()), { representation: 'date' });
 }
 
-export function getCycleDates(cycleLength: number): string[] {
+export function getCycleDates(cycleLength: number, cycleStartDate?: string): string[] {
   const today = startOfDay(new Date());
-  const dates: string[] = [];
   
-  for (let i = cycleLength - 1; i >= 0; i--) {
-    const date = subDays(today, i);
+  // If no anchor date provided, fall back to old sliding window behavior
+  if (!cycleStartDate) {
+    const dates: string[] = [];
+    for (let i = cycleLength - 1; i >= 0; i--) {
+      const date = subDays(today, i);
+      dates.push(formatISO(date, { representation: 'date' }));
+    }
+    return dates;
+  }
+  
+  // Calculate based on anchor date
+  const anchorDate = parseISO(cycleStartDate);
+  const daysSinceStart = differenceInDays(today, anchorDate);
+  
+  // Which cycle are we in? (0-indexed)
+  const cycleIndex = Math.floor(daysSinceStart / cycleLength);
+  
+  // Start date of the current cycle
+  const currentCycleStartDate = addDays(anchorDate, cycleIndex * cycleLength);
+  
+  // Generate all dates in the current cycle
+  const dates: string[] = [];
+  for (let i = 0; i < cycleLength; i++) {
+    const date = addDays(currentCycleStartDate, i);
     dates.push(formatISO(date, { representation: 'date' }));
   }
   
   return dates;
+}
+
+export function calculateCycleProgress(
+  entries: Entry[],
+  cycleDates: string[],
+  habitId: string
+): number {
+  const completedCount = entries.filter(
+    (e) => e.habitId === habitId && cycleDates.includes(e.date) && e.value
+  ).length;
+  
+  return Math.round((completedCount / cycleDates.length) * 100);
+}
+
+export function getCycleInfo(cycleLength: number, cycleStartDate: string) {
+  const today = startOfDay(new Date());
+  const anchorDate = parseISO(cycleStartDate);
+  const daysSinceStart = differenceInDays(today, anchorDate);
+  
+  // Current cycle number (1-indexed for display)
+  const cycleNumber = Math.floor(daysSinceStart / cycleLength) + 1;
+  
+  // Day within the current cycle (1-indexed for display)
+  const dayInCycle = (daysSinceStart % cycleLength) + 1;
+  
+  // Start date of the current cycle
+  const currentCycleStartDate = addDays(anchorDate, Math.floor(daysSinceStart / cycleLength) * cycleLength);
+  
+  // Days remaining in current cycle (0 means today is the last day)
+  const daysRemaining = cycleLength - dayInCycle;
+  
+  const cycleDates = getCycleDates(cycleLength, cycleStartDate);
+  
+  return {
+    cycleNumber,
+    dayInCycle,
+    daysRemaining,
+    currentCycleStartDate: formatISO(currentCycleStartDate, { representation: 'date' }),
+    dates: cycleDates,
+  };
 }
 
 export function getMonthDates(date: Date = new Date()): string[] {
@@ -32,19 +93,6 @@ export function getMonthDates(date: Date = new Date()): string[] {
   }
   
   return dates;
-}
-
-export function calculateCycleProgress(
-  entries: Entry[],
-  cycleLength: number,
-  habitId: string
-): number {
-  const cycleDates = getCycleDates(cycleLength);
-  const completedCount = entries.filter(
-    (e) => e.habitId === habitId && cycleDates.includes(e.date) && e.value
-  ).length;
-  
-  return Math.round((completedCount / cycleLength) * 100);
 }
 
 export function calculateStats(entries: Entry[], habitId: string) {

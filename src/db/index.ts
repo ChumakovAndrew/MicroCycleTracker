@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import { Habit, Entry, Settings } from '@/types';
+import { formatISO, startOfDay } from 'date-fns';
 
 export class MicroCycleDB extends Dexie {
   habits!: Table<Habit>;
@@ -19,8 +20,13 @@ export class MicroCycleDB extends Dexie {
     // Create default settings if they don't exist
     const existingSettings = await this.settings.count();
     if (existingSettings === 0) {
+      const today = formatISO(startOfDay(new Date()), { representation: 'date' });
+      
       await this.settings.add({
+        id: 'default',
         cycleLength: 3,
+        cycleStartDate: today,
+        cycleNumber: 1,
       } as Settings);
     }
   }
