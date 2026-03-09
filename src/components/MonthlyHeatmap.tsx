@@ -1,6 +1,6 @@
 import React from 'react';
 import { Entry } from '@/types';
-import { getMonthDates } from '@/utils/calculations';
+import { getMonthDates, getTodayString } from '@/utils/calculations';
 import clsx from 'clsx';
 
 interface MonthlyHeatmapProps {
@@ -10,8 +10,8 @@ interface MonthlyHeatmapProps {
 
 export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({ entries, className }) => {
   const monthDates = getMonthDates();
-  const today = new Date();
-  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const today = getTodayString();
+  const currentMonth = `${today.substring(0, 7)}`;
 
   // Create a map of dates to activity
   const activityMap: Record<string, boolean> = {};
@@ -39,8 +39,7 @@ export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({ entries, classNa
           <div key={weekIndex} className="flex gap-1">
             {week.map((date) => {
               const hasActivity = activityMap[date];
-              const dateObj = new Date(date);
-              const isToday = date === new Date().toISOString().split('T')[0];
+              const isToday = date === today;
 
               return (
                 <div
