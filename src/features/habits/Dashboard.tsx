@@ -4,9 +4,11 @@ import { HabitList } from '@/components/HabitList';
 import { AddHabitForm } from '@/components/AddHabitForm';
 import { CycleSelector } from '@/components/CycleSelector';
 import { GlobalActivityHeatmap } from '@/components/GlobalActivityHeatmap';
+import { useCycleInfo } from '@/hooks';
 
 export const Dashboard: React.FC = () => {
   const { habits, settings, loadData, addHabit, updateCycleLength } = useHabitStore();
+  const cycleInfo = useCycleInfo();
 
   useEffect(() => {
     loadData();
@@ -17,7 +19,18 @@ export const Dashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">MicroCycle Tracker</h1>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-3xl font-bold text-white">MicroCycle Tracker</h1>
+            {cycleInfo && (
+              <div className="text-sm text-gray-400">
+                <span className="text-accent-blue font-semibold">
+                  Cycle #{cycleInfo.cycleNumber}
+                </span>
+                <span className="mx-2">•</span>
+                <span>Day {cycleInfo.dayInCycle} of {settings.cycleLength}</span>
+              </div>
+            )}
+          </div>
           <p className="text-gray-400">Track your habits in short, focused cycles</p>
         </div>
 
