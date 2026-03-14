@@ -15,7 +15,10 @@ export interface Entry {
 }
 
 export interface Settings {
+  id?: 'default';
   cycleLength: 3 | 5 | 7;
+  cycleStartDate?: string; // YYYY-MM-DD format - when the first cycle started
+  cycleNumber?: number; // Track which cycle we're in
 }
 
 export interface DailyStats {

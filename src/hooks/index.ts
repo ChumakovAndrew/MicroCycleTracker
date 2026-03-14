@@ -1,13 +1,14 @@
 import { useHabitStore } from '@/store';
-import { calculateCycleProgress, calculateStats, getCycleDates } from '@/utils/calculations';
+import { calculateCycleProgress, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
 import { useMemo } from 'react';
 
 export function useCycleProgress(habitId: string) {
   const { entries, settings } = useHabitStore();
+  const cycleDates = useCycleDates();
   
   return useMemo(() => {
-    return calculateCycleProgress(entries, settings.cycleLength, habitId);
-  }, [entries, habitId, settings.cycleLength]);
+    return calculateCycleProgress(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
 }
 
 export function useHabitStats(habitId: string) {
@@ -22,8 +23,8 @@ export function useCycleDates() {
   const { settings } = useHabitStore();
   
   return useMemo(() => {
-    return getCycleDates(settings.cycleLength);
-  }, [settings.cycleLength]);
+    return getCycleDates(settings.cycleLength, settings.cycleStartDate);
+  }, [settings.cycleLength, settings.cycleStartDate]);
 }
 
 export function useHabitEntries(habitId: string) {
@@ -32,4 +33,15 @@ export function useHabitEntries(habitId: string) {
   return useMemo(() => {
     return entries.filter((e) => e.habitId === habitId);
   }, [entries, habitId]);
+}
+
+export function useCycleInfo() {
+  const { settings } = useHabitStore();
+  
+  return useMemo(() => {
+    if (!settings.cycleStartDate) {
+      return null;
+    }
+    return getCycleInfo(settings.cycleLength, settings.cycleStartDate);
+  }, [settings.cycleLength, settings.cycleStartDate]);
 }
