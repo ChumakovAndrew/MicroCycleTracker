@@ -20,8 +20,24 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
   const progress = useCycleProgress(habit.id);
   const habitEntries = useHabitEntries(habit.id);
 
+  const isNumericHabit = habit.type === 'numeric';
+
   const handleCheckboxChange = (date: string, value: boolean) => {
     toggleEntry(habit.id, date, value);
+  };
+
+  const handleNumericChange = (date: string, rawValue: string) => {
+    const value = Number(rawValue);
+    if (Number.isNaN(value) || value < 0) {
+      return;
+    }
+
+    // For numeric habits we treat 0 as cleared entry
+    if (value === 0) {
+      toggleEntry(habit.id, date, 0);
+    } else {
+      toggleEntry(habit.id, date, value);
+    }
   };
 
   return (
@@ -37,6 +53,30 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
         <div className="flex items-center gap-3">
           {cycleDates.map((date) => {
             const entry = habitEntries.find((e) => e.date === date);
+            
+            if (isNumericHabit) {
+              const numericValue = entry && typeof entry.value === 'number' ? entry.value : 0;
+              const isNonzero = numericValue > 0;
+
+              return (
+                <div key={date} onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={numericValue}
+                    onChange={(e) => handleNumericChange(date, e.target.value)}
+                    className={clsx(
+                      'w-8 h-8 text-xs text-white rounded text-center focus:outline-none focus:border-accent-blue',
+                      isNonzero
+                        ? 'bg-accent-blue border-accent-blue'
+                        : 'bg-bg-primary border-border-subtle'
+                    )}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={date} onClick={(e) => e.stopPropagation()}>
                 <CycleCheckbox
