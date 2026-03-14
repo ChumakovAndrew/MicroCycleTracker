@@ -22,6 +22,10 @@ export const HabitList: React.FC<HabitListProps> = ({ habits }) => {
     );
   }
 
+  const handleHabitDelete = () => {
+    setExpandedHabitId(null);
+  };
+
   return (
     <div className="bg-surface rounded-lg border border-border-subtle overflow-hidden">
       {habits.map((habit) => (
@@ -31,7 +35,9 @@ export const HabitList: React.FC<HabitListProps> = ({ habits }) => {
             isExpanded={expandedHabitId === habit.id}
             onToggle={handleToggleExpand}
           />
-          {expandedHabitId === habit.id && <HabitDetail habit={habit} />}
+          {expandedHabitId === habit.id && (
+            <HabitDetail habit={habit} onDelete={handleHabitDelete} />
+          )}
         </div>
       ))}
     </div>
