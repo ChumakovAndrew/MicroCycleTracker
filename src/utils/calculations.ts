@@ -65,6 +65,18 @@ export function calculateCycleNumericSum(
     .reduce((sum, e) => sum + (typeof e.value === 'number' ? e.value : 0), 0);
 }
 
+export function calculateCycleNumericAverage(
+  entries: Entry[],
+  cycleDates: string[],
+  habitId: string
+): number {
+  const sum = calculateCycleNumericSum(entries, cycleDates, habitId);
+  if (cycleDates.length === 0) {
+    return 0;
+  }
+  return Number((sum / cycleDates.length).toFixed(2));
+}
+
 export function getCycleInfo(cycleLength: number, cycleStartDate: string) {
   const today = startOfDay(new Date());
   const anchorDate = parseISO(cycleStartDate);

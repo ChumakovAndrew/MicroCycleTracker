@@ -1,5 +1,5 @@
 import { useHabitStore } from '@/store';
-import { calculateCycleProgress, calculateCycleNumericSum, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
+import { calculateCycleProgress, calculateCycleNumericSum, calculateCycleNumericAverage, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
 import { useMemo } from 'react';
 
 export function useCycleProgress(habitId: string) {
@@ -17,6 +17,15 @@ export function useCycleNumericSum(habitId: string) {
 
   return useMemo(() => {
     return calculateCycleNumericSum(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericAverage(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericAverage(entries, cycleDates, habitId);
   }, [entries, cycleDates, habitId]);
 }
 
