@@ -4,7 +4,7 @@ import { Habit } from '@/types';
 import { CycleCheckbox } from './CycleCheckbox';
 import { ProgressBar } from './ProgressBar';
 import { useHabitStore } from '@/store';
-import { useCycleProgress, useCycleDates, useHabitEntries, useCycleNumericSum } from '@/hooks';
+import { useCycleProgress, useCycleDates, useHabitEntries } from '@/hooks';
 import { ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -19,7 +19,6 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
   const cycleDates = useCycleDates();
   const progress = useCycleProgress(habit.id);
   const habitEntries = useHabitEntries(habit.id);
-  const cycleNumericSum = useCycleNumericSum(habit.id);
 
   const isNumericHabit = habit.type === 'numeric';
 
@@ -49,13 +48,7 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
       >
         <div className="flex-1">
           <h3 className="font-medium text-white">{habit.name}</h3>
-          {isNumericHabit && (
-            <div className="text-xs text-gray-400">
-              Cycle total: <span className="font-semibold text-accent-blue">{cycleNumericSum}</span>
-            </div>
-          )}
         </div>
-
         <div className="flex items-center gap-3">
           {cycleDates.map((date) => {
             const entry = habitEntries.find((e) => e.date === date);
