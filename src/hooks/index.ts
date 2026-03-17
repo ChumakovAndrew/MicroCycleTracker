@@ -1,5 +1,5 @@
 import { useHabitStore } from '@/store';
-import { calculateCycleProgress, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
+import { calculateCycleProgress, calculateCycleNumericSum, calculateCycleNumericAverage, calculateCycleNumericMax, calculateCycleNumericMin, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
 import { useMemo } from 'react';
 
 export function useCycleProgress(habitId: string) {
@@ -8,6 +8,42 @@ export function useCycleProgress(habitId: string) {
   
   return useMemo(() => {
     return calculateCycleProgress(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericSum(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericSum(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericAverage(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericAverage(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericMax(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericMax(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericMin(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericMin(entries, cycleDates, habitId);
   }, [entries, cycleDates, habitId]);
 }
 
