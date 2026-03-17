@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Habit } from '@/types';
-import { useHabitStats, useHabitEntries } from '@/hooks';
+import { useHabitStats, useHabitEntries, useCycleNumericSum } from '@/hooks';
 import { useHabitStore } from '@/store';
 import { MonthlyHeatmap } from './MonthlyHeatmap';
 import { Activity, Flame, Calendar, Trash2 } from 'lucide-react';
@@ -13,6 +13,7 @@ interface HabitDetailProps {
 export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => {
   const stats = useHabitStats(habit.id);
   const entries = useHabitEntries(habit.id);
+  const cycleNumericSum = useCycleNumericSum(habit.id);
   const { deleteHabit } = useHabitStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -50,6 +51,12 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
           <span className="text-xs text-gray-400">Completion Rate</span>
           <span className="text-2xl font-bold text-accent-blue">{stats.completionRate}%</span>
         </div>
+        {habit.type === 'numeric' && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-gray-400">Cycle Total</span>
+            <span className="text-2xl font-bold text-accent-blue">{cycleNumericSum}</span>
+          </div>
+        )}
       </div>
 
       {stats.streak > 0 && (

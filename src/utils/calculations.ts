@@ -50,6 +50,21 @@ export function calculateCycleProgress(
   return Math.round((completedCount / cycleDates.length) * 100);
 }
 
+export function calculateCycleNumericSum(
+  entries: Entry[],
+  cycleDates: string[],
+  habitId: string
+): number {
+  return entries
+    .filter(
+      (e) =>
+        e.habitId === habitId &&
+        cycleDates.includes(e.date) &&
+        typeof e.value === 'number'
+    )
+    .reduce((sum, e) => sum + (typeof e.value === 'number' ? e.value : 0), 0);
+}
+
 export function getCycleInfo(cycleLength: number, cycleStartDate: string) {
   const today = startOfDay(new Date());
   const anchorDate = parseISO(cycleStartDate);
