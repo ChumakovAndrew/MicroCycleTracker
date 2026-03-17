@@ -77,6 +77,48 @@ export function calculateCycleNumericAverage(
   return Number((sum / cycleDates.length).toFixed(2));
 }
 
+export function calculateCycleNumericMax(
+  entries: Entry[],
+  cycleDates: string[],
+  habitId: string
+): number {
+  const values = entries
+    .filter(
+      (e) =>
+        e.habitId === habitId &&
+        cycleDates.includes(e.date) &&
+        typeof e.value === 'number'
+    )
+    .map((e) => e.value as number);
+
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return Math.max(...values);
+}
+
+export function calculateCycleNumericMin(
+  entries: Entry[],
+  cycleDates: string[],
+  habitId: string
+): number {
+  const values = entries
+    .filter(
+      (e) =>
+        e.habitId === habitId &&
+        cycleDates.includes(e.date) &&
+        typeof e.value === 'number'
+    )
+    .map((e) => e.value as number);
+
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return Math.min(...values);
+}
+
 export function getCycleInfo(cycleLength: number, cycleStartDate: string) {
   const today = startOfDay(new Date());
   const anchorDate = parseISO(cycleStartDate);

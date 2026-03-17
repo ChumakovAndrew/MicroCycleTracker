@@ -1,5 +1,5 @@
 import { useHabitStore } from '@/store';
-import { calculateCycleProgress, calculateCycleNumericSum, calculateCycleNumericAverage, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
+import { calculateCycleProgress, calculateCycleNumericSum, calculateCycleNumericAverage, calculateCycleNumericMax, calculateCycleNumericMin, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
 import { useMemo } from 'react';
 
 export function useCycleProgress(habitId: string) {
@@ -26,6 +26,24 @@ export function useCycleNumericAverage(habitId: string) {
 
   return useMemo(() => {
     return calculateCycleNumericAverage(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericMax(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericMax(entries, cycleDates, habitId);
+  }, [entries, cycleDates, habitId]);
+}
+
+export function useCycleNumericMin(habitId: string) {
+  const { entries } = useHabitStore();
+  const cycleDates = useCycleDates();
+
+  return useMemo(() => {
+    return calculateCycleNumericMin(entries, cycleDates, habitId);
   }, [entries, cycleDates, habitId]);
 }
 

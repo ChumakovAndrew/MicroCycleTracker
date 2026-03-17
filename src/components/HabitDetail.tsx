@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Habit } from '@/types';
-import { useHabitStats, useHabitEntries, useCycleNumericSum, useCycleNumericAverage } from '@/hooks';
+import { useHabitStats, useHabitEntries, useCycleNumericSum, useCycleNumericAverage, useCycleNumericMax, useCycleNumericMin } from '@/hooks';
 import { useHabitStore } from '@/store';
 import { MonthlyHeatmap } from './MonthlyHeatmap';
 import { Activity, Flame, Calendar, Trash2 } from 'lucide-react';
@@ -15,6 +15,8 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
   const entries = useHabitEntries(habit.id);
   const cycleNumericSum = useCycleNumericSum(habit.id);
   const cycleNumericAverage = useCycleNumericAverage(habit.id);
+  const cycleNumericMax = useCycleNumericMax(habit.id);
+  const cycleNumericMin = useCycleNumericMin(habit.id);
   const { deleteHabit } = useHabitStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -61,6 +63,14 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
             <div className="flex flex-col gap-1">
               <span className="text-xs text-gray-400">Avg/day</span>
               <span className="text-2xl font-bold text-accent-blue">{cycleNumericAverage}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Max</span>
+              <span className="text-2xl font-bold text-accent-blue">{cycleNumericMax}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-gray-400">Min</span>
+              <span className="text-2xl font-bold text-accent-blue">{cycleNumericMin}</span>
             </div>
           </>
         )}
