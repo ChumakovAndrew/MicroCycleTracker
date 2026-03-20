@@ -13,7 +13,7 @@ interface HabitStore {
 
   // Actions
   loadData: () => Promise<void>;
-  addHabit: (name: string, type: 'binary' | 'numeric') => Promise<void>;
+  addHabit: (name: string, type: 'binary' | 'numeric', description?: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   toggleEntry: (habitId: string, date: string, value: boolean | number) => Promise<void>;
   updateCycleLength: (length: 3 | 5 | 7) => Promise<void>;
@@ -66,11 +66,12 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     }
   },
 
-  addHabit: async (name: string, type: 'binary' | 'numeric') => {
+  addHabit: async (name: string, type: 'binary' | 'numeric', description?: string) => {
     const habit: Habit = {
       id: nanoid(),
       name,
       type,
+      description,
       createdAt: new Date(),
     };
 
