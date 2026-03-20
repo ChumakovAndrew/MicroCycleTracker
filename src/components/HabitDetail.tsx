@@ -28,6 +28,12 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
 
   return (
     <div className="bg-surface p-6 border-t border-border-subtle space-y-6">
+      {habit.description && (
+        <div className="p-3 bg-bg-primary border border-border-subtle rounded">
+          <h4 className="text-sm font-semibold text-gray-300">Description</h4>
+          <p className="text-sm text-gray-400 mt-1">{habit.description}</p>
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-xs text-gray-400 flex items-center gap-1">

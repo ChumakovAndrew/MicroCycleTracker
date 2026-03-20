@@ -4,6 +4,7 @@ export interface Habit {
   id: string;
   name: string;
   type: HabitType;
+  description?: string;
   createdAt: Date;
 }
 

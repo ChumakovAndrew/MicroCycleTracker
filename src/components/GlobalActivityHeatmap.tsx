@@ -12,7 +12,7 @@ export const GlobalActivityHeatmap: React.FC = () => {
   return (
     <div className="mt-12 pt-8 border-t border-border-subtle">
       <h2 className="text-lg font-semibold text-white mb-6">Monthly Activity Overview</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
         {habits.map((habit) => (
           <div key={habit.id} className="space-y-3">
             <p className="text-sm font-medium text-gray-300">{habit.name}</p>

@@ -3,20 +3,22 @@ import { Plus } from 'lucide-react';
 import clsx from 'clsx';
 
 interface AddHabitFormProps {
-  onSubmit: (name: string, type: 'binary' | 'numeric') => void;
+  onSubmit: (name: string, type: 'binary' | 'numeric', description?: string) => void;
 }
 
 export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSubmit }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [name, setName] = React.useState('');
   const [type, setType] = React.useState<'binary' | 'numeric'>('binary');
+  const [description, setDescription] = React.useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onSubmit(name, type);
+      onSubmit(name, type, description.trim() ? description.trim() : undefined);
       setName('');
       setType('binary');
+      setDescription('');
       setIsOpen(false);
     }
   };
@@ -67,6 +69,14 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSubmit }) => {
             <span className="text-sm">Numeric (Count)</span>
           </label>
         </div>
+
+        <textarea
+          placeholder="Description (optional)..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="px-3 py-2 bg-bg-primary border border-border-subtle rounded text-white placeholder-gray-500 focus:outline-none focus:border-accent-blue resize-none"
+          rows={3}
+        />
 
         <div className="flex gap-2">
           <button
