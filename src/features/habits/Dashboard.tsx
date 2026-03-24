@@ -3,10 +3,12 @@ import { useHabitStore } from '@/store';
 import { HabitList } from '@/components/HabitList';
 import { AddHabitForm } from '@/components/AddHabitForm';
 import { GlobalActivityHeatmap } from '@/components/GlobalActivityHeatmap';
+import { useCycleInfo } from '@/hooks';
 
 
 export const Dashboard: React.FC = () => {
   const { habits, settings, loadData, addHabit, updateCycleLength } = useHabitStore();
+  const cycleInfo = useCycleInfo();
 
   useEffect(() => {
     loadData();
