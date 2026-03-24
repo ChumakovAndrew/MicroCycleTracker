@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
-import { Habit } from '@/types';
-import { useHabitStats, useHabitEntries, useCycleNumericSum, useCycleNumericAverage, useCycleNumericMax, useCycleNumericMin } from '@/hooks';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Habit, DAY_COMMENT_MAX_LENGTH } from '@/types';
+import {
+  useHabitStats,
+  useHabitEntries,
+  useCycleNumericSum,
+  useCycleNumericAverage,
+  useCycleNumericMax,
+  useCycleNumericMin,
+} from '@/hooks';
 import { useHabitStore } from '@/store';
 import { MonthlyHeatmap } from './MonthlyHeatmap';
-import { Activity, Flame, Calendar, Trash2 } from 'lucide-react';
+import { Activity, Flame, Calendar, Trash2, MessageSquare } from 'lucide-react';
+import { format, formatISO, parseISO, startOfDay } from 'date-fns';
+import { getMonthDates } from '@/utils/calculations';
 
 interface HabitDetailProps {
   habit: Habit;
@@ -17,8 +26,77 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
   const cycleNumericAverage = useCycleNumericAverage(habit.id);
   const cycleNumericMax = useCycleNumericMax(habit.id);
   const cycleNumericMin = useCycleNumericMin(habit.id);
+  const dayComments = useHabitStore((s) => s.dayComments);
+  const upsertDayComment = useHabitStore((s) => s.upsertDayComment);
   const { deleteHabit } = useHabitStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const todayString = formatISO(startOfDay(new Date()), { representation: 'date' });
+  const monthDates = useMemo(() => getMonthDates(), [todayString]);
+
+  const [selectedDate, setSelectedDate] = useState(todayString);
+  const prevHabitRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (prevHabitRef.current !== habit.id) {
+      prevHabitRef.current = habit.id;
+      setSelectedDate(todayString);
+      return;
+    }
+    setSelectedDate((prev) =>
+      prev && monthDates.includes(prev) ? prev : todayString
+    );
+  }, [habit.id, monthDates, todayString]);
+
+  const persistedComment = selectedDate
+    ? dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text
+    : undefined;
+
+  const [draft, setDraft] = useState(persistedComment ?? '');
+  const commentAreaRef = useRef<HTMLTextAreaElement>(null);
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const saved =
+      dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text ?? '';
+    const editing = commentAreaRef.current === document.activeElement;
+    if (editing) return;
+    setDraft(saved);
+  }, [habit.id, selectedDate, dayComments]);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const saved =
+      dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text ?? '';
+    if (draft === saved) return;
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      saveDebounceRef.current = null;
+      upsertDayComment(habit.id, selectedDate, draft);
+    }, 450);
+    return () => {
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+        saveDebounceRef.current = null;
+      }
+    };
+  }, [draft, habit.id, selectedDate, dayComments, upsertDayComment]);
+
+  const handleCommentBlur = () => {
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+      saveDebounceRef.current = null;
+    }
+    if (!selectedDate) return;
+    const saved =
+      dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text ?? '';
+    if (draft !== saved) {
+      upsertDayComment(habit.id, selectedDate, draft);
+    }
+  };
+
+  const displayComment = (persistedComment ?? '').trim() ? persistedComment : null;
 
   const handleDeleteConfirm = async () => {
     await deleteHabit(habit.id);
@@ -92,7 +170,59 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
 
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-gray-300">Monthly Activity</h4>
-        <MonthlyHeatmap entries={entries} />
+        <p className="text-xs text-gray-500">
+          Click a day in the grid to select it for your note.
+        </p>
+        <MonthlyHeatmap
+          entries={entries}
+          selectedDate={selectedDate}
+          onDateSelect={setSelectedDate}
+        />
+      </div>
+
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-gray-400" />
+          Day comment
+        </h4>
+        <p className="text-xs text-gray-500">
+          Autosaves a moment after you stop typing.
+        </p>
+        {selectedDate && (
+          <p className="text-xs font-medium text-gray-300">
+            {format(parseISO(`${selectedDate}T12:00:00`), 'EEEE, MMM d')}
+            {selectedDate === todayString ? ' · Today' : ''}
+          </p>
+        )}
+        <div className="rounded border border-border-subtle bg-bg-primary p-3 space-y-2">
+          <label htmlFor={`habit-${habit.id}-day-comment`} className="sr-only">
+            Comment for {selectedDate || 'selected day'}
+          </label>
+          <textarea
+            ref={commentAreaRef}
+            id={`habit-${habit.id}-day-comment`}
+            value={draft}
+            onChange={(e) =>
+              setDraft(e.target.value.slice(0, DAY_COMMENT_MAX_LENGTH))
+            }
+            onBlur={handleCommentBlur}
+            placeholder="No comment yet"
+            rows={3}
+            className="w-full rounded bg-bg-primary border border-border-subtle px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-accent-blue resize-y min-h-[4.5rem]"
+          />
+          <div className="flex justify-between items-center text-xs text-gray-500">
+            <span>
+              {displayComment ? (
+                <span className="text-gray-400">Saved for this day.</span>
+              ) : (
+                <span>No comment yet</span>
+              )}
+            </span>
+            <span>
+              {draft.length}/{DAY_COMMENT_MAX_LENGTH}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Delete Section */}
@@ -100,7 +230,7 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
         {showDeleteConfirm ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-300">
-              Are you sure you want to delete <span className="font-semibold">{habit.name}</span>? This action cannot be undone. All entries for this habit will be deleted.
+              Are you sure you want to delete <span className="font-semibold">{habit.name}</span>? This action cannot be undone. All entries and day comments for this habit will be deleted.
             </p>
             <div className="flex gap-3">
               <button

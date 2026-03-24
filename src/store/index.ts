@@ -1,13 +1,18 @@
 import { create } from 'zustand';
-import { Habit, Entry, Settings } from '@/types';
+import { Habit, Entry, Settings, DayComment, DAY_COMMENT_MAX_LENGTH } from '@/types';
 import { db } from '@/db';
 import { nanoid } from './utils';
 import { formatISO, startOfDay } from 'date-fns';
+
+function dayCommentPrimaryKey(habitId: string, date: string): string {
+  return `${habitId}::${date}`;
+}
 
 interface HabitStore {
   // State
   habits: Habit[];
   entries: Entry[];
+  dayComments: DayComment[];
   settings: Settings;
   selectedHabitId: string | null;
 
@@ -16,6 +21,7 @@ interface HabitStore {
   addHabit: (name: string, type: 'binary' | 'numeric', description?: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   toggleEntry: (habitId: string, date: string, value: boolean | number) => Promise<void>;
+  upsertDayComment: (habitId: string, date: string, text: string) => Promise<void>;
   updateCycleLength: (length: 3 | 5 | 7) => Promise<void>;
   setSelectedHabit: (id: string | null) => void;
   getEntriesForHabit: (habitId: string) => Entry[];
@@ -24,6 +30,7 @@ interface HabitStore {
 export const useHabitStore = create<HabitStore>((set, get) => ({
   habits: [],
   entries: [],
+  dayComments: [],
   settings: { cycleLength: 3 },
   selectedHabitId: null,
 
@@ -32,6 +39,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       await db.initialize();
       const habits = await db.habits.toArray();
       const entries = await db.entries.toArray();
+      const dayComments = await db.dayComments.toArray();
       let settings = await db.settings.toArray();
       
       // Initialize settings with defaults if not exists
@@ -59,6 +67,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       set({
         habits: habits as Habit[],
         entries: entries as Entry[],
+        dayComments: dayComments as DayComment[],
         settings: loadedSettings,
       });
     } catch (error) {
@@ -88,11 +97,14 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     try {
       await db.habits.delete(id);
       await db.entries.where('habitId').equals(id).delete();
+      await db.dayComments.where('habitId').equals(id).delete();
       const habits = await db.habits.toArray();
       const entries = await db.entries.toArray();
+      const dayComments = await db.dayComments.toArray();
       set({ 
         habits: habits as Habit[],
         entries: entries as Entry[],
+        dayComments: dayComments as DayComment[],
       });
     } catch (error) {
       console.error('Failed to delete habit:', error);
@@ -125,6 +137,30 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       set({ entries: entries as Entry[] });
     } catch (error) {
       console.error('Failed to toggle entry:', error);
+    }
+  },
+
+  upsertDayComment: async (habitId: string, date: string, text: string) => {
+    try {
+      const clipped = text.slice(0, DAY_COMMENT_MAX_LENGTH);
+      const normalized = clipped.replace(/\r\n/g, '\n').trim();
+      const id = dayCommentPrimaryKey(habitId, date);
+
+      if (!normalized) {
+        await db.dayComments.delete(id);
+      } else {
+        await db.dayComments.put({
+          id,
+          habitId,
+          date,
+          text: normalized,
+        });
+      }
+
+      const dayComments = await db.dayComments.toArray();
+      set({ dayComments: dayComments as DayComment[] });
+    } catch (error) {
+      console.error('Failed to save day comment:', error);
     }
   },
 
