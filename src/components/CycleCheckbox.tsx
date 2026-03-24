@@ -13,7 +13,7 @@ export const CycleCheckbox: React.FC<CycleCheckboxProps> = ({ checked, onChange,
       onClick={() => onChange(!checked)}
       disabled={disabled}
       className={clsx(
-        'w-8 h-8 rounded border flex items-center justify-center transition-colors',
+        'w-10 h-10 rounded border flex items-center justify-center transition-colors',
         checked
           ? 'bg-accent-blue border-accent-blue'
           : 'border-border-subtle hover:border-accent-blue',

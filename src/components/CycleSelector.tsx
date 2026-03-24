@@ -16,7 +16,7 @@ export const CycleSelector: React.FC<CycleSelectorProps> = ({ value, onChange })
           key={option}
           onClick={() => onChange(option)}
           className={clsx(
-            'px-4 py-2 rounded border transition-colors',
+            'px-4 py-1 rounded border transition-colors',
             value === option
               ? 'bg-accent-blue border-accent-blue text-white'
               : 'border-border-subtle text-gray-400 hover:border-accent-blue'

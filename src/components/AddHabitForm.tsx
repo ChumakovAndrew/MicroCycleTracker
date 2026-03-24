@@ -1,6 +1,5 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
-import clsx from 'clsx';
 
 interface AddHabitFormProps {
   onSubmit: (name: string, type: 'binary' | 'numeric', description?: string) => void;
@@ -27,7 +26,7 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSubmit }) => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-accent-blue rounded hover:opacity-90 transition-opacity"
+        className="w-40 h-10 flex items-center justify-center gap-2 px-4 py-2 bg-accent-blue rounded hover:opacity-90 transition-opacity"
       >
         <Plus className="w-5 h-5" />
         Add Habit
