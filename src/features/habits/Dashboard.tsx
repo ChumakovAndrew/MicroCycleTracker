@@ -6,6 +6,7 @@ import { GlobalActivityHeatmap } from '@/components/GlobalActivityHeatmap';
 import { useCycleInfo } from '@/hooks';
 
 
+
 export const Dashboard: React.FC = () => {
   const { habits, settings, loadData, addHabit, updateCycleLength } = useHabitStore();
   const cycleInfo = useCycleInfo();

@@ -3,7 +3,7 @@ import { calculateCycleProgress, calculateCycleNumericSum, calculateCycleNumeric
 import { useMemo } from 'react';
 
 export function useCycleProgress(habitId: string) {
-  const { entries, settings } = useHabitStore();
+  const { entries } = useHabitStore();
   const cycleDates = useCycleDates();
   
   return useMemo(() => {

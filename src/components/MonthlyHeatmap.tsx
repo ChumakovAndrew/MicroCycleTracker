@@ -6,9 +6,17 @@ import clsx from 'clsx';
 interface MonthlyHeatmapProps {
   entries: Entry[];
   className?: string;
+  /** When set with `onDateSelect`, cells become clickable and the selected day is highlighted. */
+  selectedDate?: string | null;
+  onDateSelect?: (date: string) => void;
 }
 
-export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({ entries, className }) => {
+export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({
+  entries,
+  className,
+  selectedDate,
+  onDateSelect,
+}) => {
   const monthDates = getMonthDates();
   const today = getTodayString();
   const currentMonth = `${today.substring(0, 7)}`;
@@ -40,19 +48,33 @@ export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({ entries, classNa
             {week.map((date) => {
               const hasActivity = activityMap[date];
               const isToday = date === today;
+              const isSelected = Boolean(onDateSelect && selectedDate === date);
+
+              const cellClass = clsx(
+                'w-6 h-6 rounded border shrink-0',
+                hasActivity
+                  ? 'bg-accent-blue border-accent-blue'
+                  : 'bg-bg-primary border-border-subtle hover:border-accent-blue',
+                isToday && !isSelected && 'ring-1 ring-offset-1 ring-accent-blue',
+                isSelected && 'ring-2 ring-white'
+              );
+
+              const title = new Date(date + 'T12:00:00').toLocaleDateString();
+
+              if (onDateSelect) {
+                return (
+                  <button
+                    key={date}
+                    type="button"
+                    title={title}
+                    onClick={() => onDateSelect(date)}
+                    className={clsx(cellClass, 'cursor-pointer p-0')}
+                  />
+                );
+              }
 
               return (
-                <div
-                  key={date}
-                  title={new Date(date).toLocaleDateString()}
-                  className={clsx(
-                    'w-6 h-6 rounded border',
-                    hasActivity
-                      ? 'bg-accent-blue border-accent-blue'
-                      : 'bg-bg-primary border-border-subtle hover:border-accent-blue',
-                    isToday && 'ring-1 ring-offset-1 ring-accent-blue'
-                  )}
-                />
+                <div key={date} title={title} className={cellClass} />
               );
             })}
           </div>

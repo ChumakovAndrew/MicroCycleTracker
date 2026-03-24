@@ -15,6 +15,16 @@ export interface Entry {
   value: boolean | number;
 }
 
+/** Max length for per-day habit notes (enforced in UI and persistence). */
+export const DAY_COMMENT_MAX_LENGTH = 280;
+
+export interface DayComment {
+  id: string;
+  habitId: string;
+  date: string; // YYYY-MM-DD
+  text: string;
+}
+
 export interface Settings {
   id?: 'default';
   cycleLength: 3 | 5 | 7;
