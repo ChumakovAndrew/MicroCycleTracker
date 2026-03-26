@@ -171,66 +171,68 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
           </p>
         </div>
       )}
-
-      <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-gray-300">Monthly Activity</h4>
-        <p className="text-xs text-gray-500">
-          Click a day in the grid to select it for your note.
-        </p>
-        <MonthlyHeatmap
-          entries={entries}
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
-          allowedDates={cycleDates}
-          monthDate={selectedDate ? parseISO(`${selectedDate}T12:00:00`) : new Date()}
-        />
-      </div>
-
-      <div className="space-y-3">
+      <div className='space-y-2'>
         <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-gray-400" />
           Day comment
-        </h4>
-        <p className="text-xs text-gray-500">
-          Autosaves a moment after you stop typing.
-        </p>
+      </h4>
         {selectedDate && (
           <p className="text-xs font-medium text-gray-300">
             {format(parseISO(`${selectedDate}T12:00:00`), 'EEEE, MMM d')}
             {selectedDate === todayString ? ' · Today' : ''}
           </p>
         )}
-        <div className="rounded border border-border-subtle bg-bg-primary p-3 space-y-2">
-          <label htmlFor={`habit-${habit.id}-day-comment`} className="sr-only">
-            Comment for {selectedDate || 'selected day'}
-          </label>
-          <textarea
-            ref={commentAreaRef}
-            id={`habit-${habit.id}-day-comment`}
-            value={draft}
-            onChange={(e) =>
-              setDraft(e.target.value.slice(0, DAY_COMMENT_MAX_LENGTH))
-            }
-            onBlur={handleCommentBlur}
-            placeholder="No comment yet"
-            rows={3}
-            className="w-full rounded bg-bg-primary border border-border-subtle px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-accent-blue resize-y min-h-[4.5rem]"
-          />
-          <div className="flex justify-between items-center text-xs text-gray-500">
-            <span>
-              {displayComment ? (
-                <span className="text-gray-400">Saved for this day.</span>
-              ) : (
-                <span>No comment yet</span>
-              )}
-            </span>
-            <span>
-              {draft.length}/{DAY_COMMENT_MAX_LENGTH}
-            </span>
-          </div>
-        </div>
       </div>
+      
 
+      <div className='!mt-1 flex gap-8'>
+        <div className="space-y-3">
+          {/* <h4 className="text-sm font-semibold text-gray-300">Monthly Activity</h4> */}
+          <p className="text-xs text-gray-500">
+            Click a day to select it for your note.
+          </p>
+          <MonthlyHeatmap
+            entries={entries}
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            allowedDates={cycleDates}
+            monthDate={selectedDate ? parseISO(`${selectedDate}T12:00:00`) : new Date()}
+          />
+        </div>
+
+        <div className=" w-full ">
+        
+          <p className="text-xs text-gray-500">
+            Autosaves a moment after you stop typing.
+          </p>
+        
+            <label htmlFor={`habit-${habit.id}-day-comment`} className="mt-3 sr-only">
+              Comment for {selectedDate || 'selected day'}
+            </label>
+            <textarea
+              ref={commentAreaRef}
+              id={`habit-${habit.id}-day-comment`}
+              value={draft}
+              onChange={(e) =>
+                setDraft(e.target.value.slice(0, DAY_COMMENT_MAX_LENGTH))
+              }
+              onBlur={handleCommentBlur}
+              placeholder="No comment yet"
+              rows={3}
+              className="mt-3 w-full rounded bg-bg-primary border border-border-subtle px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-accent-blue resize-y min-h-[4.5rem]"
+            />
+            <div className="px-3 flex justify-between items-center text-xs text-gray-500">
+                {displayComment ? (
+                  <span className="text-gray-400">Saved for this day.</span>
+                ) : (
+                  <span>No comment yet</span>
+                )}
+              <span>
+                {draft.length}/{DAY_COMMENT_MAX_LENGTH}
+              </span>
+            </div>
+        </div>
+      </div> 
       {/* Delete Section */}
       <div className="pt-4 border-t border-border-subtle">
         {showDeleteConfirm ? (
