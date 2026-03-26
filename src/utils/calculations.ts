@@ -147,6 +147,87 @@ export function getCycleInfo(cycleLength: number, cycleStartDate: string) {
   };
 }
 
+function mod(n: number, m: number) {
+  return ((n % m) + m) % m;
+}
+
+/**
+ * Get cycle dates for an "offset" from the real current cycle.
+ * Example: offset=0 -> current cycle, offset=-1 -> previous cycle.
+ */
+export function getCycleDatesForOffset(
+  cycleLength: number,
+  cycleStartDate: string,
+  cycleOffset: number,
+  now: Date = new Date()
+): string[] {
+  const today = startOfDay(now);
+  const anchorDate = parseISO(cycleStartDate);
+
+  const daysSinceStart = differenceInDays(today, anchorDate);
+  const currentCycleIndex = Math.floor(daysSinceStart / cycleLength);
+  const viewedCycleIndex = currentCycleIndex + cycleOffset;
+
+  const viewedCycleStartDate = addDays(anchorDate, viewedCycleIndex * cycleLength);
+
+  const dates: string[] = [];
+  for (let i = 0; i < cycleLength; i++) {
+    const date = addDays(viewedCycleStartDate, i);
+    dates.push(formatISO(date, { representation: 'date' }));
+  }
+  return dates;
+}
+
+export function getCycleInfoForOffset(
+  cycleLength: number,
+  cycleStartDate: string,
+  cycleOffset: number,
+  now: Date = new Date()
+) {
+  const today = startOfDay(now);
+  const anchorDate = parseISO(cycleStartDate);
+
+  const daysSinceStart = differenceInDays(today, anchorDate);
+  const currentCycleIndex = Math.floor(daysSinceStart / cycleLength);
+  const viewedCycleIndex = currentCycleIndex + cycleOffset;
+
+  const viewedCycleStartDate = addDays(anchorDate, viewedCycleIndex * cycleLength);
+  const dayInCycle = mod(differenceInDays(today, viewedCycleStartDate), cycleLength) + 1;
+
+  const daysRemaining = cycleLength - dayInCycle;
+  const cycleNumber = viewedCycleIndex + 1;
+
+  const dates = getCycleDatesForOffset(cycleLength, cycleStartDate, cycleOffset, now);
+
+  return {
+    cycleNumber,
+    dayInCycle,
+    daysRemaining,
+    currentCycleStartDate: formatISO(viewedCycleStartDate, { representation: 'date' }),
+    dates,
+  };
+}
+
+export function getCycleOffsetBounds(
+  cycleLength: number,
+  cycleStartDate?: string,
+  now: Date = new Date()
+): { minOffset: number; maxOffset: number } {
+  if (!cycleStartDate) return { minOffset: 0, maxOffset: 0 };
+
+  const today = startOfDay(now);
+  const anchorDate = parseISO(cycleStartDate);
+  const daysSinceStart = differenceInDays(today, anchorDate);
+
+  // currentCycleIndex is 0 for "current cycle", so previous cycles are allowed only down to -currentCycleIndex
+  const currentCycleIndex = Math.max(0, Math.floor(daysSinceStart / cycleLength));
+
+  return {
+    minOffset: -currentCycleIndex,
+    maxOffset: 0, // can't view beyond current cycle
+  };
+}
+
 export function getMonthDates(date: Date = new Date()): string[] {
   const year = date.getFullYear();
   const month = date.getMonth();

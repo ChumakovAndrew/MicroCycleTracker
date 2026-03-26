@@ -88,7 +88,7 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
           })}
         </div>
 
-        <div className="w-60 flex items-center gap-2">
+        <div className="w-80 flex items-center gap-2">
           <ProgressBar percentage={progress} />
           <span className="text-sm text-gray-400 w-10 text-right">{progress}%</span>
           <ChevronDown
