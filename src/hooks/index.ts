@@ -1,5 +1,14 @@
 import { useHabitStore } from '@/store';
-import { calculateCycleProgress, calculateCycleNumericSum, calculateCycleNumericAverage, calculateCycleNumericMax, calculateCycleNumericMin, calculateStats, getCycleDates, getCycleInfo } from '@/utils/calculations';
+import {
+  calculateCycleProgress,
+  calculateCycleNumericSum,
+  calculateCycleNumericAverage,
+  calculateCycleNumericMax,
+  calculateCycleNumericMin,
+  calculateStats,
+  getCycleDatesForOffset,
+  getCycleInfoForOffset,
+} from '@/utils/calculations';
 import { useMemo } from 'react';
 
 export function useCycleProgress(habitId: string) {
@@ -56,11 +65,12 @@ export function useHabitStats(habitId: string) {
 }
 
 export function useCycleDates() {
-  const { settings } = useHabitStore();
+  const { settings, viewCycleOffset } = useHabitStore();
   
   return useMemo(() => {
-    return getCycleDates(settings.cycleLength, settings.cycleStartDate);
-  }, [settings.cycleLength, settings.cycleStartDate]);
+    if (!settings.cycleStartDate) return [];
+    return getCycleDatesForOffset(settings.cycleLength, settings.cycleStartDate, viewCycleOffset);
+  }, [settings.cycleLength, settings.cycleStartDate, viewCycleOffset]);
 }
 
 export function useHabitEntries(habitId: string) {
@@ -72,12 +82,12 @@ export function useHabitEntries(habitId: string) {
 }
 
 export function useCycleInfo() {
-  const { settings } = useHabitStore();
+  const { settings, viewCycleOffset } = useHabitStore();
   
   return useMemo(() => {
     if (!settings.cycleStartDate) {
       return null;
     }
-    return getCycleInfo(settings.cycleLength, settings.cycleStartDate);
-  }, [settings.cycleLength, settings.cycleStartDate]);
+    return getCycleInfoForOffset(settings.cycleLength, settings.cycleStartDate, viewCycleOffset);
+  }, [settings.cycleLength, settings.cycleStartDate, viewCycleOffset]);
 }

@@ -3,6 +3,7 @@ import { Habit, Entry, Settings, DayComment, DAY_COMMENT_MAX_LENGTH } from '@/ty
 import { db } from '@/db';
 import { nanoid } from './utils';
 import { formatISO, startOfDay } from 'date-fns';
+import { getCycleOffsetBounds } from '@/utils/calculations';
 
 function dayCommentPrimaryKey(habitId: string, date: string): string {
   return `${habitId}::${date}`;
@@ -15,6 +16,8 @@ interface HabitStore {
   dayComments: DayComment[];
   settings: Settings;
   selectedHabitId: string | null;
+  /** Relative offset from the real "current cycle": 0 = current, -1 = previous, +1 = next. */
+  viewCycleOffset: number;
 
   // Actions
   loadData: () => Promise<void>;
@@ -24,6 +27,7 @@ interface HabitStore {
   upsertDayComment: (habitId: string, date: string, text: string) => Promise<void>;
   updateCycleLength: (length: 3 | 5 | 7) => Promise<void>;
   setSelectedHabit: (id: string | null) => void;
+  setViewCycleOffset: (offset: number) => void;
   getEntriesForHabit: (habitId: string) => Entry[];
 }
 
@@ -33,6 +37,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
   dayComments: [],
   settings: { cycleLength: 3 },
   selectedHabitId: null,
+  viewCycleOffset: 0,
 
   loadData: async () => {
     try {
@@ -51,7 +56,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           cycleStartDate: today,
           cycleNumber: 1,
         };
-        await db.settings.add(defaultSettings as any);
+        await db.settings.add(defaultSettings);
         settings = [defaultSettings];
       }
       
@@ -61,7 +66,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       if (!loadedSettings.cycleStartDate) {
         const today = formatISO(startOfDay(new Date()), { representation: 'date' });
         loadedSettings.cycleStartDate = today;
-        await db.settings.update('default', { cycleStartDate: today } as any);
+        await db.settings.update('default', { cycleStartDate: today });
       }
       
       set({
@@ -130,7 +135,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           date,
           value,
         };
-        await db.entries.add(entry as any);
+        await db.entries.add(entry);
       }
 
       const entries = await db.entries.toArray();
@@ -179,7 +184,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           cycleLength: length,
           cycleStartDate: currentSettings.cycleStartDate,
           cycleNumber: currentSettings.cycleNumber,
-        } as any);
+        });
       } else {
         const newSettings: Settings = {
           id: 'default',
@@ -187,7 +192,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           cycleStartDate: currentSettings.cycleStartDate,
           cycleNumber: currentSettings.cycleNumber,
         };
-        await db.settings.add(newSettings as any);
+        await db.settings.add(newSettings);
       }
       
       const updatedSettings = (await db.settings.toArray())[0] as Settings;
@@ -199,6 +204,16 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
 
   setSelectedHabit: (id: string | null) => {
     set({ selectedHabitId: id });
+  },
+
+  setViewCycleOffset: (offset: number) => {
+    const { settings } = get();
+    const { minOffset, maxOffset } = getCycleOffsetBounds(
+      settings.cycleLength,
+      settings.cycleStartDate,
+    );
+    const clamped = Math.max(minOffset, Math.min(maxOffset, offset));
+    set({ viewCycleOffset: clamped });
   },
 
   getEntriesForHabit: (habitId: string) => {

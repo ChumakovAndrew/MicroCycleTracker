@@ -7,12 +7,13 @@ import {
   useCycleNumericAverage,
   useCycleNumericMax,
   useCycleNumericMin,
+  useCycleDates,
+  useCycleInfo,
 } from '@/hooks';
 import { useHabitStore } from '@/store';
 import { MonthlyHeatmap } from './MonthlyHeatmap';
 import { Activity, Flame, Calendar, Trash2, MessageSquare } from 'lucide-react';
 import { format, formatISO, parseISO, startOfDay } from 'date-fns';
-import { getMonthDates } from '@/utils/calculations';
 
 interface HabitDetailProps {
   habit: Habit;
@@ -32,28 +33,31 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const todayString = formatISO(startOfDay(new Date()), { representation: 'date' });
-  const monthDates = useMemo(() => getMonthDates(), [todayString]);
+  const cycleDates = useCycleDates();
+  const cycleInfo = useCycleInfo();
 
-  const [selectedDate, setSelectedDate] = useState(todayString);
-  const prevHabitRef = useRef<string | null>(null);
+  const defaultSelectedDate = useMemo(() => {
+    if (!cycleDates.length) return todayString;
+    const idx = cycleInfo ? Math.max(0, Math.min(cycleInfo.dayInCycle - 1, cycleDates.length - 1)) : cycleDates.length - 1;
+    return cycleDates[idx] ?? cycleDates[cycleDates.length - 1] ?? todayString;
+  }, [cycleDates, cycleInfo, todayString]);
 
+  const [selectedDate, setSelectedDate] = useState(defaultSelectedDate);
+  const commentAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  // When user switches cycles/habits we pick the "today-in-that-cycle" day,
+  // unless the textarea is currently focused (so we don't overwrite draft).
   useEffect(() => {
-    if (prevHabitRef.current !== habit.id) {
-      prevHabitRef.current = habit.id;
-      setSelectedDate(todayString);
-      return;
-    }
-    setSelectedDate((prev) =>
-      prev && monthDates.includes(prev) ? prev : todayString
-    );
-  }, [habit.id, monthDates, todayString]);
+    const editing = commentAreaRef.current === document.activeElement;
+    if (editing) return;
+    setSelectedDate(defaultSelectedDate);
+  }, [habit.id, defaultSelectedDate]);
 
   const persistedComment = selectedDate
     ? dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text
     : undefined;
 
   const [draft, setDraft] = useState(persistedComment ?? '');
-  const commentAreaRef = useRef<HTMLTextAreaElement>(null);
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -177,6 +181,8 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
           entries={entries}
           selectedDate={selectedDate}
           onDateSelect={setSelectedDate}
+          allowedDates={cycleDates}
+          monthDate={selectedDate ? parseISO(`${selectedDate}T12:00:00`) : new Date()}
         />
       </div>
 
