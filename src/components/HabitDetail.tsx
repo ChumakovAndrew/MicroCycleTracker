@@ -219,7 +219,7 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
               onBlur={handleCommentBlur}
               placeholder="No comment yet"
               rows={3}
-              className="mt-3 w-full rounded bg-bg-primary border border-border-subtle px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-accent-blue resize-y min-h-[4.5rem]"
+              className="mt-3 w-full rounded bg-bg-primary border border-border-subtle px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-accent-blue resize-y min-h-[9.5rem]"
             />
             <div className="px-3 flex justify-between items-center text-xs text-gray-500">
                 {displayComment ? (
