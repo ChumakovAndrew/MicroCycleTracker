@@ -9,6 +9,10 @@ interface MonthlyHeatmapProps {
   /** When set with `onDateSelect`, cells become clickable and the selected day is highlighted. */
   selectedDate?: string | null;
   onDateSelect?: (date: string) => void;
+  /** If provided, only dates in this list are clickable. */
+  allowedDates?: string[];
+  /** The month to display. Defaults to the current month. */
+  monthDate?: Date;
 }
 
 export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({
@@ -16,10 +20,14 @@ export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({
   className,
   selectedDate,
   onDateSelect,
+  allowedDates,
+  monthDate,
 }) => {
-  const monthDates = getMonthDates();
+  const monthDates = getMonthDates(monthDate);
   const today = getTodayString();
-  const currentMonth = `${today.substring(0, 7)}`;
+  const currentMonth = monthDate
+    ? `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`
+    : `${today.substring(0, 7)}`;
 
   // Create a map of dates to activity
   const activityMap: Record<string, boolean> = {};
@@ -49,6 +57,7 @@ export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({
               const hasActivity = activityMap[date];
               const isToday = date === today;
               const isSelected = Boolean(onDateSelect && selectedDate === date);
+              const isAllowed = !allowedDates || allowedDates.includes(date);
 
               const cellClass = clsx(
                 'w-6 h-6 rounded border shrink-0',
@@ -56,7 +65,8 @@ export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({
                   ? 'bg-accent-blue border-accent-blue'
                   : 'bg-bg-primary border-border-subtle hover:border-accent-blue',
                 isToday && !isSelected && 'ring-1 ring-offset-1 ring-accent-blue',
-                isSelected && 'ring-2 ring-white'
+                isSelected && 'ring-2 ring-white',
+                !isAllowed && 'opacity-30 cursor-not-allowed'
               );
 
               const title = new Date(date + 'T12:00:00').toLocaleDateString();
@@ -67,8 +77,9 @@ export const MonthlyHeatmap: React.FC<MonthlyHeatmapProps> = ({
                     key={date}
                     type="button"
                     title={title}
-                    onClick={() => onDateSelect(date)}
-                    className={clsx(cellClass, 'cursor-pointer p-0')}
+                    disabled={!isAllowed}
+                    onClick={() => isAllowed && onDateSelect(date)}
+                    className={clsx(cellClass, isAllowed ? 'cursor-pointer' : 'cursor-not-allowed', 'p-0')}
                   />
                 );
               }

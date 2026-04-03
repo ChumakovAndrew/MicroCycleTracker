@@ -187,7 +187,6 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
 
       <div className='!mt-1 flex gap-8'>
         <div className="space-y-3">
-          {/* <h4 className="text-sm font-semibold text-gray-300">Monthly Activity</h4> */}
           <p className="text-xs text-gray-500">
             Click a day to select it for your note.
           </p>
