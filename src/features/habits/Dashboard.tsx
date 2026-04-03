@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import { useHabitStore } from '@/store';
 import { HabitList } from '@/components/HabitList';
 import { AddHabitForm } from '@/components/AddHabitForm';
@@ -33,8 +33,10 @@ export const Dashboard: React.FC = () => {
         onCycleLengthChange={updateCycleLength}
       />
 
-      <div className='flex h-10' />
-      <AddHabitForm onSubmit={addHabit} /> TODO: move and style better
+
+      <div className='mt-2 flex justify-end w-full'>
+      <AddHabitForm onSubmit={addHabit} />
+      </div>
 
       {/* Global Activity Heatmap */}
       <GlobalActivityHeatmap />

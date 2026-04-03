@@ -26,7 +26,7 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSubmit }) => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="w-40 h-10 flex items-center justify-center gap-2 px-4 py-2 bg-accent-blue rounded hover:opacity-90 transition-opacity"
+        className="w-1/5 h-10 flex items-center justify-center gap-2 px-4 py-2 bg-accent-blue rounded hover:opacity-90 transition-opacity m-2"
       >
         <Plus className="w-5 h-5" />
         Add Habit
@@ -35,7 +35,7 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSubmit }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface p-4 border border-border-subtle rounded-lg">
+    <form onSubmit={handleSubmit} className="w-full bg-surface p-4 border border-border-subtle rounded-lg">
       <div className="flex flex-col gap-4">
         <input
           type="text"
@@ -77,7 +77,7 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSubmit }) => {
           rows={3}
         />
 
-        <div className="flex gap-2">
+        <div className="flex w-1/2 ml-auto mr-0 gap-2">
           <button
             type="submit"
             className="flex-1 px-4 py-2 bg-accent-blue rounded hover:opacity-90 transition-opacity"
