@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useHabitStore } from '@/store';
 import { HabitList } from '@/components/HabitList';
 import { AddHabitForm } from '@/components/AddHabitForm';

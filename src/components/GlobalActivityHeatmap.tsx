@@ -1,11 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { format, set, subDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { useHabitStore } from '@/store';
 
 const DAY_COUNT = 365;
 const CELL_SIZE_PX = 20;
-const COLUMN_GAP_PX = 4;
-const COLUMN_STEP_PX = CELL_SIZE_PX + COLUMN_GAP_PX;
 
 type HeatmapCell = {
   date: string;
@@ -144,7 +142,7 @@ useLayoutEffect(() => {
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 text-xs text-gray-400">
             {legendItems.map((item) => (
               <div key={item.level} className="flex items-center gap-1.5 rounded border border-border-subtle px-2 py-1">
-                <span className={`h-3.5 w-3.5 rounded-[3px] border ${levelClasses[item.level]}`} />
+                <span className={`h-3.5 w-3.5 rounded-[3px] border`} />
                 <span className="font-medium text-gray-300">{item.label}</span>
                 <span>{item.description}</span>
               </div>
