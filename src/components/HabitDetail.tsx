@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { Habit } from '@/types';
-import { useHabitStats, useHabitEntries, useCycleNumericSum, useCycleNumericAverage, useCycleNumericMax, useCycleNumericMin } from '@/hooks';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Habit, DAY_COMMENT_MAX_LENGTH } from '@/types';
+import {
+  useHabitStats,
+  useHabitEntries,
+  useCycleNumericSum,
+  useCycleNumericAverage,
+  useCycleNumericMax,
+  useCycleNumericMin,
+  useCycleDates,
+  useCycleInfo,
+} from '@/hooks';
 import { useHabitStore } from '@/store';
 import { MonthlyHeatmap } from './MonthlyHeatmap';
-import { Activity, Flame, Calendar, Trash2 } from 'lucide-react';
+import { Activity, Flame, Calendar, Trash2, MessageSquare } from 'lucide-react';
+import { format, formatISO, parseISO, startOfDay } from 'date-fns';
 
 interface HabitDetailProps {
   habit: Habit;
@@ -17,8 +27,80 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
   const cycleNumericAverage = useCycleNumericAverage(habit.id);
   const cycleNumericMax = useCycleNumericMax(habit.id);
   const cycleNumericMin = useCycleNumericMin(habit.id);
+  const dayComments = useHabitStore((s) => s.dayComments);
+  const upsertDayComment = useHabitStore((s) => s.upsertDayComment);
   const { deleteHabit } = useHabitStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const todayString = formatISO(startOfDay(new Date()), { representation: 'date' });
+  const cycleDates = useCycleDates();
+  const cycleInfo = useCycleInfo();
+
+  const defaultSelectedDate = useMemo(() => {
+    if (!cycleDates.length) return todayString;
+    const idx = cycleInfo ? Math.max(0, Math.min(cycleInfo.dayInCycle - 1, cycleDates.length - 1)) : cycleDates.length - 1;
+    return cycleDates[idx] ?? cycleDates[cycleDates.length - 1] ?? todayString;
+  }, [cycleDates, cycleInfo, todayString]);
+
+  const [selectedDate, setSelectedDate] = useState(defaultSelectedDate);
+  const commentAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  // When user switches cycles/habits we pick the "today-in-that-cycle" day,
+  // unless the textarea is currently focused (so we don't overwrite draft).
+  useEffect(() => {
+    const editing = commentAreaRef.current === document.activeElement;
+    if (editing) return;
+    setSelectedDate(defaultSelectedDate);
+  }, [habit.id, defaultSelectedDate]);
+
+  const persistedComment = selectedDate
+    ? dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text
+    : undefined;
+
+  const [draft, setDraft] = useState(persistedComment ?? '');
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const saved =
+      dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text ?? '';
+    const editing = commentAreaRef.current === document.activeElement;
+    if (editing) return;
+    setDraft(saved);
+  }, [habit.id, selectedDate, dayComments]);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const saved =
+      dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text ?? '';
+    if (draft === saved) return;
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      saveDebounceRef.current = null;
+      upsertDayComment(habit.id, selectedDate, draft);
+    }, 450);
+    return () => {
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+        saveDebounceRef.current = null;
+      }
+    };
+  }, [draft, habit.id, selectedDate, dayComments, upsertDayComment]);
+
+  const handleCommentBlur = () => {
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+      saveDebounceRef.current = null;
+    }
+    if (!selectedDate) return;
+    const saved =
+      dayComments.find((c) => c.habitId === habit.id && c.date === selectedDate)?.text ?? '';
+    if (draft !== saved) {
+      upsertDayComment(habit.id, selectedDate, draft);
+    }
+  };
+
+  const displayComment = (persistedComment ?? '').trim() ? persistedComment : null;
 
   const handleDeleteConfirm = async () => {
     await deleteHabit(habit.id);
@@ -89,18 +171,73 @@ export const HabitDetail: React.FC<HabitDetailProps> = ({ habit, onDelete }) => 
           </p>
         </div>
       )}
-
-      <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-gray-300">Monthly Activity</h4>
-        <MonthlyHeatmap entries={entries} />
+      <div className='space-y-2'>
+        <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-gray-400" />
+          Day comment
+      </h4>
+        {selectedDate && (
+          <p className="text-xs font-medium text-gray-300">
+            {format(parseISO(`${selectedDate}T12:00:00`), 'EEEE, MMM d')}
+            {selectedDate === todayString ? ' · Today' : ''}
+          </p>
+        )}
       </div>
+      
 
+      <div className='!mt-1 flex gap-8'>
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">
+            Click a day to select it for your note.
+          </p>
+          <MonthlyHeatmap
+            entries={entries}
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            allowedDates={cycleDates}
+            monthDate={selectedDate ? parseISO(`${selectedDate}T12:00:00`) : new Date()}
+          />
+        </div>
+
+        <div className=" w-full ">
+        
+          <p className="text-xs text-gray-500">
+            Autosaves a moment after you stop typing.
+          </p>
+        
+            <label htmlFor={`habit-${habit.id}-day-comment`} className="mt-3 sr-only">
+              Comment for {selectedDate || 'selected day'}
+            </label>
+            <textarea
+              ref={commentAreaRef}
+              id={`habit-${habit.id}-day-comment`}
+              value={draft}
+              onChange={(e) =>
+                setDraft(e.target.value.slice(0, DAY_COMMENT_MAX_LENGTH))
+              }
+              onBlur={handleCommentBlur}
+              placeholder="No comment yet"
+              rows={3}
+              className="mt-3 w-full rounded bg-bg-primary border border-border-subtle px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-accent-blue resize-y min-h-[9.5rem]"
+            />
+            <div className="px-3 flex justify-between items-center text-xs text-gray-500">
+                {displayComment ? (
+                  <span className="text-gray-400">Saved for this day.</span>
+                ) : (
+                  <span>No comment yet</span>
+                )}
+              <span>
+                {draft.length}/{DAY_COMMENT_MAX_LENGTH}
+              </span>
+            </div>
+        </div>
+      </div> 
       {/* Delete Section */}
       <div className="pt-4 border-t border-border-subtle">
         {showDeleteConfirm ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-300">
-              Are you sure you want to delete <span className="font-semibold">{habit.name}</span>? This action cannot be undone. All entries for this habit will be deleted.
+              Are you sure you want to delete <span className="font-semibold">{habit.name}</span>? This action cannot be undone. All entries and day comments for this habit will be deleted.
             </p>
             <div className="flex gap-3">
               <button

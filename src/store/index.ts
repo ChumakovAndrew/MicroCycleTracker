@@ -1,37 +1,50 @@
 import { create } from 'zustand';
-import { Habit, Entry, Settings } from '@/types';
+import { Habit, Entry, Settings, DayComment, DAY_COMMENT_MAX_LENGTH } from '@/types';
 import { db } from '@/db';
 import { nanoid } from './utils';
 import { formatISO, startOfDay } from 'date-fns';
+import { getCycleOffsetBounds } from '@/utils/calculations';
+
+function dayCommentPrimaryKey(habitId: string, date: string): string {
+  return `${habitId}::${date}`;
+}
 
 interface HabitStore {
   // State
   habits: Habit[];
   entries: Entry[];
+  dayComments: DayComment[];
   settings: Settings;
   selectedHabitId: string | null;
+  /** Relative offset from the real "current cycle": 0 = current, -1 = previous, +1 = next. */
+  viewCycleOffset: number;
 
   // Actions
   loadData: () => Promise<void>;
   addHabit: (name: string, type: 'binary' | 'numeric', description?: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   toggleEntry: (habitId: string, date: string, value: boolean | number) => Promise<void>;
+  upsertDayComment: (habitId: string, date: string, text: string) => Promise<void>;
   updateCycleLength: (length: 3 | 5 | 7) => Promise<void>;
   setSelectedHabit: (id: string | null) => void;
+  setViewCycleOffset: (offset: number) => void;
   getEntriesForHabit: (habitId: string) => Entry[];
 }
 
 export const useHabitStore = create<HabitStore>((set, get) => ({
   habits: [],
   entries: [],
+  dayComments: [],
   settings: { cycleLength: 3 },
   selectedHabitId: null,
+  viewCycleOffset: 0,
 
   loadData: async () => {
     try {
       await db.initialize();
       const habits = await db.habits.toArray();
       const entries = await db.entries.toArray();
+      const dayComments = await db.dayComments.toArray();
       let settings = await db.settings.toArray();
       
       // Initialize settings with defaults if not exists
@@ -43,7 +56,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           cycleStartDate: today,
           cycleNumber: 1,
         };
-        await db.settings.add(defaultSettings as any);
+        await db.settings.add(defaultSettings);
         settings = [defaultSettings];
       }
       
@@ -53,12 +66,13 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
       if (!loadedSettings.cycleStartDate) {
         const today = formatISO(startOfDay(new Date()), { representation: 'date' });
         loadedSettings.cycleStartDate = today;
-        await db.settings.update('default', { cycleStartDate: today } as any);
+        await db.settings.update('default', { cycleStartDate: today });
       }
       
       set({
         habits: habits as Habit[],
         entries: entries as Entry[],
+        dayComments: dayComments as DayComment[],
         settings: loadedSettings,
       });
     } catch (error) {
@@ -88,11 +102,14 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     try {
       await db.habits.delete(id);
       await db.entries.where('habitId').equals(id).delete();
+      await db.dayComments.where('habitId').equals(id).delete();
       const habits = await db.habits.toArray();
       const entries = await db.entries.toArray();
+      const dayComments = await db.dayComments.toArray();
       set({ 
         habits: habits as Habit[],
         entries: entries as Entry[],
+        dayComments: dayComments as DayComment[],
       });
     } catch (error) {
       console.error('Failed to delete habit:', error);
@@ -118,13 +135,37 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           date,
           value,
         };
-        await db.entries.add(entry as any);
+        await db.entries.add(entry);
       }
 
       const entries = await db.entries.toArray();
       set({ entries: entries as Entry[] });
     } catch (error) {
       console.error('Failed to toggle entry:', error);
+    }
+  },
+
+  upsertDayComment: async (habitId: string, date: string, text: string) => {
+    try {
+      const clipped = text.slice(0, DAY_COMMENT_MAX_LENGTH);
+      const normalized = clipped.replace(/\r\n/g, '\n').trim();
+      const id = dayCommentPrimaryKey(habitId, date);
+
+      if (!normalized) {
+        await db.dayComments.delete(id);
+      } else {
+        await db.dayComments.put({
+          id,
+          habitId,
+          date,
+          text: normalized,
+        });
+      }
+
+      const dayComments = await db.dayComments.toArray();
+      set({ dayComments: dayComments as DayComment[] });
+    } catch (error) {
+      console.error('Failed to save day comment:', error);
     }
   },
 
@@ -143,7 +184,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           cycleLength: length,
           cycleStartDate: currentSettings.cycleStartDate,
           cycleNumber: currentSettings.cycleNumber,
-        } as any);
+        });
       } else {
         const newSettings: Settings = {
           id: 'default',
@@ -151,7 +192,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           cycleStartDate: currentSettings.cycleStartDate,
           cycleNumber: currentSettings.cycleNumber,
         };
-        await db.settings.add(newSettings as any);
+        await db.settings.add(newSettings);
       }
       
       const updatedSettings = (await db.settings.toArray())[0] as Settings;
@@ -163,6 +204,16 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
 
   setSelectedHabit: (id: string | null) => {
     set({ selectedHabitId: id });
+  },
+
+  setViewCycleOffset: (offset: number) => {
+    const { settings } = get();
+    const { minOffset, maxOffset } = getCycleOffsetBounds(
+      settings.cycleLength,
+      settings.cycleStartDate,
+    );
+    const clamped = Math.max(minOffset, Math.min(maxOffset, offset));
+    set({ viewCycleOffset: clamped });
   },
 
   getEntriesForHabit: (habitId: string) => {

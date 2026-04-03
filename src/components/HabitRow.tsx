@@ -43,13 +43,13 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
   return (
     <div className="border-b border-border-subtle">
       <div
-        className="py-4 px-4 flex items-center gap-4 hover:bg-surface transition-colors cursor-pointer"
+        className="py-4 px-4 flex items-center gap-14 hover:bg-surface transition-colors cursor-pointer"
         onClick={() => onToggle(habit.id)}
       >
         <div className="flex-1">
           <h3 className="font-medium text-white">{habit.name}</h3>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-8">
           {cycleDates.map((date) => {
             const entry = habitEntries.find((e) => e.date === date);
             
@@ -58,7 +58,8 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
               const isNonzero = numericValue > 0;
 
               return (
-                <div key={date} onClick={(e) => e.stopPropagation()}>
+                <div className='flex items-center'
+                  key={date} onClick={(e) => e.stopPropagation()}>
                   <input
                     type="number"
                     min={0}
@@ -66,10 +67,10 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
                     value={numericValue}
                     onChange={(e) => handleNumericChange(date, e.target.value)}
                     className={clsx(
-                      'w-8 h-8 text-xs text-white rounded text-center focus:outline-none focus:border-accent-blue',
+                      'w-10 h-10 rounded text-center border border-border-subtle focus:outline-none focus:border-accent-blue',
                       isNonzero
-                        ? 'bg-accent-blue border-accent-blue'
-                        : 'bg-bg-primary border-border-subtle'
+                        ? 'bg-accent-blue border-accent-blue text-white text-lg'
+                        : 'bg-bg-primary border-border-subtle text-sm text-gray-400'
                     )}
                   />
                 </div>
@@ -87,17 +88,18 @@ export const HabitRow: React.FC<HabitRowProps> = ({ habit, isExpanded, onToggle 
           })}
         </div>
 
-        <div className="w-24 flex items-center gap-2">
+        <div className="w-80 flex items-center gap-2">
           <ProgressBar percentage={progress} />
           <span className="text-sm text-gray-400 w-10 text-right">{progress}%</span>
-        </div>
-
-        <ChevronDown
+          <ChevronDown
           className={clsx(
-            'w-5 h-5 text-gray-400 transition-transform',
+            'w-10 h-10 text-gray-400 transition-transform',
             isExpanded && 'rotate-180'
           )}
         />
+        </div>
+
+        
       </div>
 
       <motion.div
