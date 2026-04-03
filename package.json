@@ -1,6 +1,6 @@
 {
   "name": "microcycle-tracker",
-  "homepage": "https://ChumakovAndrew.github.io/microcycle-tracker",
+  "homepage": "https://ChumakovAndrew.github.io/MicroCycleTracker",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/node": "^25.5.2",
     "@types/react": "^18.2.37",
     "@types/react-calendar-heatmap": "^1.7.2",
     "@types/react-dom": "^18.2.15",
